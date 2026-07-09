@@ -1,0 +1,137 @@
+.preloader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #050407; /* Matches --bg-darker */
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
+  opacity: 1;
+  visibility: visible;
+}
+
+.preloader-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.preloader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Luxury Logo Animation */
+.luxury-logo-pulse {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-ring {
+  position: absolute;
+  border: 1px solid var(--gold);
+  border-radius: 50%;
+  animation: logoPulse 2.5s infinite ease-in-out;
+}
+
+.logo-ring.ring-1 {
+  width: 100%;
+  height: 100%;
+  opacity: 0.25;
+  animation-delay: 0s;
+}
+
+.logo-ring.ring-2 {
+  width: 75%;
+  height: 75%;
+  opacity: 0.45;
+  animation-delay: 0.5s;
+  border-style: dashed;
+}
+
+.logo-center-gem {
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+  transform: rotate(45deg);
+  border-radius: 2px;
+  box-shadow: 0 0 15px var(--gold);
+  animation: gemFloat 3s infinite ease-in-out alternate;
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    transform: scale(0.9);
+    border-color: var(--gold-dark);
+  }
+  50% {
+    transform: scale(1.1);
+    border-color: var(--gold-light);
+    box-shadow: 0 0 20px rgba(220, 179, 108, 0.2);
+  }
+}
+
+@keyframes gemFloat {
+  0% {
+    transform: rotate(45deg) translateY(0);
+  }
+  100% {
+    transform: rotate(225deg) translateY(-3px);
+  }
+}
+
+.preloader-brand {
+  font-family: var(--font-serif);
+  font-size: 2.5rem;
+  letter-spacing: 0.35em;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.preloader-subtitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.4em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+}
+
+.loader-line-wrapper {
+  width: 220px;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+}
+
+.loader-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dark), var(--gold-light));
+  transition: width 0.1s ease;
+}
+
+.loader-text-status {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  height: 15px;
+}

@@ -1,0 +1,154 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, ShoppingBag, Plus, Minus, Check, Star } from 'lucide-react';
+import { useCart } from '../context/CartContext';
+import './ProductDetail.css';
+
+export default function ProductDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [product, setProduct] = useState(null);
+  const [qty, setQty] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [added, setAdded] = useState(false);
+  const { addToCart } = useCart();
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`http://localhost:5000/api/products/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error('Product not found');
+        return res.json();
+      })
+      .then(data => {
+        setProduct(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error loading product detail:", err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart(product, qty);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="detail-loading-container">
+        <div className="spinner"></div>
+        <p>Uncorking fragrance notes...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="detail-error-container container">
+        <h2>Blend Not Found</h2>
+        <p>This premium reserve might have sold out or does not exist in our catalog.</p>
+        <Link to="/shop" className="gold-button">Back to shop</Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="product-detail-page container animate-fade">
+      <Link to="/shop" className="back-link reveal-item stagger-1">
+        <ArrowLeft size={16} /> Back to curation
+      </Link>
+
+      <div className="detail-layout">
+        {/* Gallery */}
+        <div className="detail-gallery reveal-item stagger-2">
+          <div className="main-image-wrapper glass-panel float-rotate-3d">
+            <img src={product.image} alt={product.name} />
+          </div>
+        </div>
+
+        {/* Product Details */}
+        <div className="detail-info-pane reveal-item stagger-3">
+          <span className="detail-category">{product.category} family</span>
+          <h1 className="detail-title">{product.name}</h1>
+          <p className="detail-brand">{product.brand}</p>
+          <div className="detail-rating">
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Star key={s} size={14} fill="var(--gold)" color="var(--gold)" />
+            ))}
+            <span>(4.9/5 - 42 Reviews)</span>
+          </div>
+
+          <p className="detail-price">₹{product.price.toLocaleString('en-IN')}</p>
+
+          <p className="detail-desc">{product.description}</p>
+
+          {/* Scent Pyramid Interaction */}
+          <div className="scent-pyramid-section">
+            <h3>Scent Profile Pyramid</h3>
+            <div className="pyramid-wrapper">
+              <div className="pyramid-level top-level glass-panel">
+                <div className="level-badge">Top Notes</div>
+                <div className="level-notes">{product.top_notes || 'Citrus, Spices'}</div>
+                <div className="level-desc">The sparkling curtain reveal. High-frequency volatile molecules like cold-pressed bergamot, saffron, and pink pepper. Evaporates gracefully within 20-30 minutes.</div>
+              </div>
+              <div className="pyramid-level middle-level glass-panel">
+                <div className="level-badge">Heart Notes</div>
+                <div className="level-notes">{product.middle_notes || 'Floral accords'}</div>
+                <div className="level-desc">The core narrative structure. Rich absolute floral extracts or spices like Turkish Damask Rose and Night Jasmine. Clings close to the skin, lingering for 4-5 hours.</div>
+              </div>
+              <div className="pyramid-level base-level glass-panel">
+                <div className="level-badge">Base Notes</div>
+                <div className="level-notes">{product.base_notes || 'Amber, Woods, Musk'}</div>
+                <div className="level-desc">The heavy, grounding anchor. Oak cask-matured oils like Cambodian Oud, leather, and vanilla pod resin. Longevities exceed 12-16 hours.</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="purchase-controls">
+            <div className="qty-selector">
+              <button 
+                onClick={() => setQty(prev => Math.max(1, prev - 1))}
+                aria-label="Decrease quantity"
+              >
+                <Minus size={14} />
+              </button>
+              <span>{qty}</span>
+              <button 
+                onClick={() => setQty(prev => prev + 1)}
+                aria-label="Increase quantity"
+              >
+                <Plus size={14} />
+              </button>
+            </div>
+
+            <button 
+              className={`gold-button solid add-cart-btn ${added ? 'success' : ''}`}
+              onClick={handleAddToCart}
+            >
+              {added ? (
+                <>
+                  <Check size={18} /> Added to Selection
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={18} /> Acquire Extrait (₹{(product.price * qty).toLocaleString('en-IN')})
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Stock warnings */}
+          <p className="stock-notice">
+            {product.stock <= 5 
+              ? `Only ${product.stock} decants left in the house vaults.` 
+              : 'In stock. Shipped immediately via armored carrier courier.'}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
