@@ -1,0 +1,391 @@
+/* User Profile Styling */
+.profile-page {
+  padding-top: 8rem;
+  padding-bottom: 6rem;
+}
+
+.profile-header-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 3rem;
+  border-radius: 12px;
+  margin-bottom: 2.5rem;
+}
+
+.profile-avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.profile-avatar-wrap {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--bg-darker);
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 15px rgba(223, 185, 127, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-icon {
+  color: var(--gold);
+}
+
+.profile-user-info {
+  text-align: left;
+}
+
+.profile-badge {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.profile-user-info h1 {
+  font-size: 1.75rem;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.profile-user-info p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.logout-header-btn {
+  padding: 0.6rem 1.25rem !important;
+  font-size: 0.72rem !important;
+  border-radius: 4px !important;
+}
+
+/* Dashboard Grid Layout */
+.profile-layout {
+  display: grid;
+  grid-template-columns: 0.9fr 2.1fr;
+  gap: 2.5rem;
+  align-items: start;
+}
+
+.profile-sidebar {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.profile-sidebar h3 {
+  font-size: 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.75rem;
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.profile-nav-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.profile-nav-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  text-align: left;
+  padding: 0.8rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: var(--transition-smooth);
+}
+
+.profile-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+}
+
+.profile-nav-btn.active {
+  background: rgba(223, 185, 127, 0.05);
+  border-color: rgba(223, 185, 127, 0.2);
+  color: var(--gold);
+  font-weight: 600;
+}
+
+/* Scent quiz preferences badge card */
+.scent-preference-card {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px dashed rgba(223, 185, 127, 0.2);
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.scent-preference-card h4 {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.scent-results-summary p,
+.scent-results-empty p {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.scent-family-label {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--gold-dark);
+  color: var(--bg-darker);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+/* Display Pane */
+.profile-main-display {
+  padding: 3rem;
+  min-height: 480px;
+}
+
+.profile-orders-tab h2,
+.profile-address-tab h2 {
+  font-size: 1.75rem;
+  font-weight: 400;
+}
+
+.tab-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Orders List */
+.no-orders-box {
+  padding: 4rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.empty-box-icon {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.no-orders-box h3 {
+  font-size: 1.35rem;
+  font-family: var(--font-serif);
+}
+
+.no-orders-box p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.order-item-card {
+  padding: 1.75rem;
+  border-radius: 8px;
+}
+
+.order-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.order-id-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-primary);
+  display: block;
+}
+
+.order-date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.order-status-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.6rem;
+  border-radius: 20px;
+  letter-spacing: 0.1em;
+}
+
+.order-status-badge.pending {
+  background: rgba(223, 185, 127, 0.15);
+  color: var(--gold);
+  border: 1px solid rgba(223, 185, 127, 0.3);
+}
+
+.order-status-badge.processing {
+  background: rgba(52, 152, 219, 0.15);
+  color: #3498db;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+.order-status-badge.completed {
+  background: rgba(39, 174, 96, 0.15);
+  color: #27ae60;
+  border: 1px solid rgba(39, 174, 96, 0.3);
+}
+
+.order-status-badge.cancelled {
+  background: rgba(192, 41, 43, 0.15);
+  color: #c0392b;
+  border: 1px solid rgba(192, 41, 43, 0.3);
+}
+
+.order-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.item-qty {
+  color: var(--gold);
+  font-weight: 600;
+  width: 30px;
+}
+
+.item-name-brand {
+  flex-grow: 1;
+}
+
+.item-name-brand h4 {
+  font-size: 0.88rem;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  margin: 0;
+}
+
+.item-name-brand p {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.item-price {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.order-item-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.order-item-footer span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.order-item-footer h3 {
+  font-size: 1.25rem;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* Address form styling */
+.address-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.save-address-btn {
+  align-self: flex-start;
+  margin-top: 1rem;
+}
+
+/* Responsiveness */
+@media (max-width: 1024px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-header-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  .logout-header-btn {
+    align-self: flex-start;
+  }
+
+  .profile-main-display {
+    padding: 1.5rem;
+  }
+
+  .form-group-row {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}

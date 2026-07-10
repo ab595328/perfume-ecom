@@ -1,15 +1,18 @@
+/* Preloader Overrides for 15-second Destiny Protocol-inspired distillation loader */
 .preloader-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: #050407; /* Matches --bg-darker */
-  z-index: 9999;
+  background-color: var(--bg-darker);
+  z-index: 99999;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.6s;
+  padding: 4rem;
+  overflow: hidden;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
   opacity: 1;
   visibility: visible;
 }
@@ -19,104 +22,244 @@
   visibility: hidden;
 }
 
-.preloader-content {
+/* Digital Grid Backdrop Overlay */
+.preloader-grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(223, 185, 127, 0.01) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(223, 185, 127, 0.01) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Left & Right Telemetry Panels */
+.preloader-side-telemetry {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+  width: 250px;
+  z-index: 5;
+  text-align: left;
+}
+
+.preloader-side-telemetry.right {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.telemetry-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.telemetry-label {
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.telemetry-value {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+/* Bar Gauges on Right Panel */
+.ingredient-progress-bar {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.bar-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dark), var(--accent-amber));
+  transition: width 0.15s ease-out;
+}
+
+/* Center Panel layout */
+.preloader-center-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+  z-index: 5;
+  width: 450px;
 }
 
-/* Luxury Logo Animation */
-.luxury-logo-pulse {
+/* Concentric rotating alchemical rings mesh */
+.rotating-rings-mesh {
   position: relative;
-  width: 80px;
-  height: 80px;
+  width: 180px;
+  height: 180px;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.logo-ring {
+.mesh-ring {
   position: absolute;
-  border: 1px solid var(--gold);
   border-radius: 50%;
-  animation: logoPulse 2.5s infinite ease-in-out;
+  border: 1px solid transparent;
 }
 
-.logo-ring.ring-1 {
+.mesh-ring.ring-outer {
   width: 100%;
   height: 100%;
-  opacity: 0.25;
-  animation-delay: 0s;
+  border-top-color: rgba(223, 185, 127, 0.25);
+  border-bottom-color: rgba(223, 185, 127, 0.25);
+  animation: meshRotateClockwise 8s infinite linear;
 }
 
-.logo-ring.ring-2 {
-  width: 75%;
-  height: 75%;
-  opacity: 0.45;
-  animation-delay: 0.5s;
+.mesh-ring.ring-middle {
+  width: 80%;
+  height: 80%;
+  border-left-color: rgba(224, 79, 102, 0.2);
+  border-right-color: rgba(224, 79, 102, 0.2);
   border-style: dashed;
+  animation: meshRotateCounter 6s infinite linear;
 }
 
-.logo-center-gem {
-  width: 20px;
-  height: 20px;
-  background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
-  transform: rotate(45deg);
-  border-radius: 2px;
-  box-shadow: 0 0 15px var(--gold);
-  animation: gemFloat 3s infinite ease-in-out alternate;
+.mesh-ring.ring-inner {
+  width: 60%;
+  height: 60%;
+  border-top-color: rgba(223, 185, 127, 0.4);
+  border-right-color: rgba(223, 185, 127, 0.1);
+  animation: meshRotateClockwise 4s infinite linear;
 }
 
-@keyframes logoPulse {
-  0%, 100% {
-    transform: scale(0.9);
-    border-color: var(--gold-dark);
-  }
-  50% {
-    transform: scale(1.1);
-    border-color: var(--gold-light);
-    box-shadow: 0 0 20px rgba(220, 179, 108, 0.2);
-  }
+.logo-gem-container {
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-center-gem-wrap {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gold);
+  overflow: hidden;
+  box-shadow: 0 0 25px rgba(223, 185, 127, 0.45);
+  background: var(--bg-darker);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: gemFloat 3s ease-in-out infinite alternate;
+}
+
+.preloader-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.logo-center-gem-wrap-placeholder {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+/* Animations */
+@keyframes meshRotateClockwise {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes meshRotateCounter {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
 }
 
 @keyframes gemFloat {
-  0% {
-    transform: rotate(45deg) translateY(0);
-  }
-  100% {
-    transform: rotate(225deg) translateY(-3px);
-  }
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-5px); }
 }
 
+/* Center brand layout */
 .preloader-brand {
   font-family: var(--font-serif);
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   letter-spacing: 0.35em;
   font-weight: 500;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   background: linear-gradient(135deg, var(--gold-light) 0%, var(--gold) 50%, var(--gold-dark) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .preloader-subtitle {
-  font-size: 0.75rem;
-  letter-spacing: 0.4em;
+  font-size: 0.72rem;
+  letter-spacing: 0.45em;
   color: var(--text-muted);
   text-transform: uppercase;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
+}
+
+/* Percent Counter styled in Monospace */
+.preloader-percent-counter {
+  font-family: monospace;
+  font-size: 1.6rem;
+  color: var(--gold-light);
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+}
+
+.percent-num {
+  font-weight: 700;
+}
+
+.percent-symbol {
+  font-size: 1rem;
+  color: var(--text-muted);
+  margin-left: 0.15rem;
 }
 
 .loader-line-wrapper {
-  width: 220px;
+  width: 280px;
   height: 1px;
   background-color: rgba(255, 255, 255, 0.05);
   position: relative;
   overflow: hidden;
   border-radius: 2px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .loader-line {
@@ -129,9 +272,50 @@
 }
 
 .loader-text-status {
-  font-size: 0.7rem;
-  letter-spacing: 0.15em;
+  font-family: monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
   color: var(--text-muted);
   text-transform: uppercase;
-  height: 15px;
+  height: 18px;
+  display: block;
+}
+
+/* Animations for panel columns */
+.animate-fade-in {
+  animation: telemetryFadeIn 1.5s ease-out forwards;
+}
+
+@keyframes telemetryFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .preloader-side-telemetry {
+    display: none; /* Hide telemetry graphs on tablet and mobile */
+  }
+  .preloader-overlay {
+    justify-content: center;
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .preloader-brand {
+    font-size: 2.2rem;
+  }
+  .preloader-subtitle {
+    font-size: 0.65rem;
+  }
+  .loader-line-wrapper {
+    width: 200px;
+  }
 }

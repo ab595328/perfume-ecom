@@ -64,6 +64,46 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+app.post('/api/auth/register', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required' });
+  }
+
+  try {
+    const db = await getDbConnection();
+    const existing = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    
+    if (existing) {
+      await db.close();
+      return res.status(400).json({ error: 'User already registered' });
+    }
+
+    const hashedPassword = hashPassword(password);
+    await db.run('INSERT INTO users (email, password, role) VALUES (?, ?, ?)', [email, hashedPassword, 'user']);
+    const newUser = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+    await db.close();
+
+    const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '2h' });
+    res.status(201).json({ token, user: { email: newUser.email, role: newUser.role } });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+app.get('/api/users', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const db = await getDbConnection();
+    const users = await db.all('SELECT id, email, role FROM users ORDER BY id DESC');
+    await db.close();
+    res.json(users);
+  } catch (error) {
+    console.error('Fetch users error:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
 // Product Routes
 app.get('/api/products', async (req, res) => {
   try {
@@ -207,6 +247,24 @@ app.get('/api/orders', authenticateToken, isAdmin, async (req, res) => {
   } catch (error) {
     console.error('Fetch orders error:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+app.get('/api/orders/user/:email', async (req, res) => {
+  try {
+    const db = await getDbConnection();
+    const orders = await db.all('SELECT * FROM orders WHERE user_email = ? ORDER BY id DESC', [req.params.email]);
+    await db.close();
+
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      items: JSON.parse(order.items)
+    }));
+
+    res.json(formattedOrders);
+  } catch (error) {
+    console.error('Fetch user orders error:', error);
+    res.status(500).json({ error: 'Failed to fetch user orders' });
   }
 });
 

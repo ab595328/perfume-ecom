@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ShieldCheck, Plus, Edit2, Trash2, LayoutDashboard, ShoppingBag, ClipboardList, LogOut, Check, X } from 'lucide-react';
+import { 
+  ShieldCheck, Plus, Edit2, Trash2, LayoutDashboard, ShoppingBag, 
+  ClipboardList, LogOut, Check, X, Users as UsersIcon, Ticket 
+} from 'lucide-react';
 import './Admin.css';
 
 export default function Admin() {
@@ -11,10 +14,12 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Form State for Adding / Editing Product
-  const [editingProduct, setEditingProduct] = useState(null); // Null if adding, product object if editing
+  const [editingProduct, setEditingProduct] = useState(null);
   const [showProductForm, setShowProductForm] = useState(false);
   const [productFormData, setProductFormData] = useState({
     name: '',
@@ -29,6 +34,16 @@ export default function Admin() {
     stock: 10
   });
 
+  // Coupon Creation Form Modal State
+  const [showCouponModal, setShowCouponModal] = useState(false);
+  const [couponFormData, setCouponFormData] = useState({
+    code: '',
+    discountType: 'percent',
+    discountValue: '',
+    minSpend: '',
+    description: ''
+  });
+
   // Check admin rights
   useEffect(() => {
     if (!isAdmin) {
@@ -36,24 +51,93 @@ export default function Admin() {
     }
   }, [isAdmin, navigate]);
 
-  // Load Products & Orders
+  // Load Products, Orders, Users, & Coupons
   const loadData = async () => {
     if (!isAdmin) return;
     setLoading(true);
+
+    const localOrders = JSON.parse(localStorage.getItem('aura_mock_orders') || '[]');
+
     try {
-      // Load Products
-      const prodRes = await fetch('http://localhost:5000/api/products');
-      const prodData = await prodRes.json();
+      // 1. Fetch Products
+      let prodData = [];
+      try {
+        const prodRes = await fetch('http://localhost:5000/api/products');
+        prodData = await prodRes.json();
+      } catch (e) {
+        console.warn("Backend products offline. Loading mock catalog list.");
+        prodData = [
+          { id: 1, name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins.' },
+          { id: 2, name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine.' },
+          { id: 3, name: 'Santal de Ciel', brand: 'Astraire Private Blend', category: 'Woody', price: 21000, stock: 15, description: 'Aged Mysore Sandalwood extract with ambergris fixatives.' },
+          { id: 4, name: 'Noir Extrême', brand: 'Astraire Private Blend', category: 'Oriental', price: 26000, stock: 5, description: 'Black Vanilla beans macerated in Limousin oak barrels.' }
+        ];
+      }
       setProducts(prodData);
 
-      // Load Orders
-      const orderRes = await authenticatedFetch('http://localhost:5000/api/orders');
-      const orderData = await orderRes.json();
-      setOrders(orderRes.ok ? orderData : []);
+      // 2. Fetch Orders
+      let dbOrders = [];
+      try {
+        const orderRes = await authenticatedFetch('http://localhost:5000/api/orders');
+        if (orderRes.ok) {
+          dbOrders = await orderRes.json();
+        }
+      } catch (e) {
+        console.warn("Backend orders offline. Loading local storage orders.");
+      }
+
+      // Merge database orders and local mock orders
+      const mergedOrders = [...dbOrders];
+      localOrders.forEach(localOrder => {
+        if (!mergedOrders.some(dbOrder => dbOrder.id === localOrder.id)) {
+          mergedOrders.push(localOrder);
+        }
+      });
+      mergedOrders.sort((a, b) => b.id - a.id);
+      setOrders(mergedOrders);
+
+      // 3. Fetch Registered Users
+      let userData = [];
+      try {
+        const userRes = await authenticatedFetch('http://localhost:5000/api/users');
+        if (userRes.ok) {
+          userData = await userRes.json();
+        }
+      } catch (e) {
+        console.warn("Backend users list offline. Loading offline mock users.");
+      }
+      const mockUsers = [
+        { id: 1, email: 'admin@astraire.com', role: 'admin' },
+        { id: 2, email: 'user@astraire.com', role: 'user' },
+        { id: 3, email: 'customer@astraire.com', role: 'user' },
+        { id: 4, email: 'connoisseur@luxury.com', role: 'user' }
+      ];
+      const mergedUsers = [...userData];
+      mockUsers.forEach(mu => {
+        if (!mergedUsers.some(u => u.email === mu.email)) {
+          mergedUsers.push(mu);
+        }
+      });
+      setUsersList(mergedUsers);
+
+      // 4. Fetch/Seed Coupons
+      const savedCoupons = localStorage.getItem('aura_coupons');
+      if (savedCoupons) {
+        setCoupons(JSON.parse(savedCoupons));
+      } else {
+        const defaultCoupons = [
+          { code: 'ASTRA10', discountType: 'percent', discountValue: 10, minSpend: 5000, description: '10% off all private compounding reserves.' },
+          { code: 'ROYAL20', discountType: 'percent', discountValue: 20, minSpend: 15000, description: '20% off priority reserves for connoisseurs.' },
+          { code: 'WELCOME1000', discountType: 'flat', discountValue: 1000, minSpend: 10000, description: 'Flat ₹1,000 off on first catalog purchase.' }
+        ];
+        localStorage.setItem('aura_coupons', JSON.stringify(defaultCoupons));
+        setCoupons(defaultCoupons);
+      }
 
       setLoading(false);
     } catch (error) {
       console.error("Error loading admin dashboard data:", error);
+      setOrders(localOrders);
       setLoading(false);
     }
   };
@@ -68,7 +152,7 @@ export default function Admin() {
     navigate('/');
   };
 
-  // Open Form to Add
+  // Open Form to Add Product
   const handleOpenAddForm = () => {
     setEditingProduct(null);
     setProductFormData({
@@ -86,7 +170,7 @@ export default function Admin() {
     setShowProductForm(true);
   };
 
-  // Open Form to Edit
+  // Open Form to Edit Product
   const handleOpenEditForm = (prod) => {
     setEditingProduct(prod);
     setProductFormData({
@@ -154,6 +238,16 @@ export default function Admin() {
 
   // Update Order Status
   const handleUpdateOrderStatus = async (id, newStatus) => {
+    const localOrders = JSON.parse(localStorage.getItem('aura_mock_orders') || '[]');
+    const isLocal = localOrders.some(o => o.id === id);
+
+    if (isLocal) {
+      const updated = localOrders.map(o => o.id === id ? { ...o, status: newStatus } : o);
+      localStorage.setItem('aura_mock_orders', JSON.stringify(updated));
+      loadData();
+      return;
+    }
+
     try {
       const response = await authenticatedFetch(`http://localhost:5000/api/orders/${id}`, {
         method: 'PUT',
@@ -161,14 +255,44 @@ export default function Admin() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to update order status');
+        throw new Error('Failed to update order in database');
       }
 
       loadData();
     } catch (err) {
-      alert("Error: " + err.message);
+      console.warn("Backend update failed, attempting local fallback", err);
+      const localUpdated = localOrders.map(o => o.id === id ? { ...o, status: newStatus } : o);
+      localStorage.setItem('aura_mock_orders', JSON.stringify(localUpdated));
+      loadData();
     }
+  };
+
+  // Add Coupon Handler
+  const handleAddCoupon = (e) => {
+    e.preventDefault();
+    if (!couponFormData.code) return;
+
+    const newCode = {
+      code: couponFormData.code.toUpperCase().trim(),
+      discountType: couponFormData.discountType,
+      discountValue: Number(couponFormData.discountValue),
+      minSpend: Number(couponFormData.minSpend || 0),
+      description: couponFormData.description
+    };
+
+    const updated = [...coupons, newCode];
+    setCoupons(updated);
+    localStorage.setItem('aura_coupons', JSON.stringify(updated));
+    setShowCouponModal(false);
+    setCouponFormData({ code: '', discountType: 'percent', discountValue: '', minSpend: '', description: '' });
+  };
+
+  // Delete Coupon Handler
+  const handleDeleteCoupon = (code) => {
+    if (!window.confirm(`Are you sure you want to retire coupon ${code}?`)) return;
+    const updated = coupons.filter(c => c.code !== code);
+    setCoupons(updated);
+    localStorage.setItem('aura_coupons', JSON.stringify(updated));
   };
 
   // Math Statistics
@@ -184,8 +308,8 @@ export default function Admin() {
 
   return (
     <div className="admin-page container animate-fade">
-      {/* Sidebar Nav */}
       <div className="admin-layout">
+        {/* Sidebar Nav */}
         <aside className="admin-sidebar glass-panel">
           <div className="admin-profile-badge">
             <ShieldCheck size={28} className="gold-icon" />
@@ -214,6 +338,18 @@ export default function Admin() {
             >
               <ClipboardList size={18} /> Order Monitor {pendingOrders > 0 && <span className="nav-badge">{pendingOrders}</span>}
             </button>
+            <button 
+              className={`nav-btn ${activeTab === 'users' ? 'active' : ''}`}
+              onClick={() => setActiveTab('users')}
+            >
+              <UsersIcon size={18} /> Registrants Vault
+            </button>
+            <button 
+              className={`nav-btn ${activeTab === 'coupons' ? 'active' : ''}`}
+              onClick={() => setActiveTab('coupons')}
+            >
+              <Ticket size={18} /> Treasury Promos
+            </button>
           </div>
 
           <button onClick={handleLogout} className="admin-logout-btn">
@@ -221,7 +357,7 @@ export default function Admin() {
           </button>
         </aside>
 
-        {/* Content Panel */}
+        {/* Content Pane */}
         <main className="admin-content-pane">
           {loading ? (
             <div className="admin-loading">
@@ -256,32 +392,25 @@ export default function Admin() {
 
                   {/* Recent Orders table preview */}
                   <div className="recent-orders-section glass-panel">
-                    <h3>Recent Acquisitions</h3>
+                    <h3>Recent Acquisitions Logs</h3>
                     <div className="table-wrapper">
                       <table>
                         <thead>
                           <tr>
                             <th>Order ID</th>
-                            <th>Customer</th>
-                            <th>Amount</th>
-                            <th>Status</th>
+                            <th>Acquirer</th>
+                            <th>Charge</th>
+                            <th>Fulfillment Status</th>
                           </tr>
                         </thead>
                         <tbody>
                           {orders.slice(0, 5).map((order) => (
                             <tr key={order.id}>
                               <td>#AE-{order.id}</td>
-                              <td>
-                                <div className="customer-info-cell">
-                                  <span>{order.user_name}</span>
-                                  <span className="email-sub">{order.user_email}</span>
-                                </div>
-                              </td>
+                              <td>{order.user_email}</td>
                               <td className="gold-text">₹{order.total_amount.toLocaleString('en-IN')}</td>
                               <td>
-                                <span className={`status-badge ${order.status}`}>
-                                  {order.status}
-                                </span>
+                                <span className={`status-badge ${order.status}`}>{order.status}</span>
                               </td>
                             </tr>
                           ))}
@@ -297,13 +426,13 @@ export default function Admin() {
                 </div>
               )}
 
-              {/* Tab 2: Products Management */}
+              {/* Tab 2: Catalog Management */}
               {activeTab === 'products' && (
                 <div className="tab-content products-tab animate-fade">
                   <div className="tab-header">
-                    <h2>Fragrance Catalog Manager</h2>
-                    <button className="gold-button solid" onClick={handleOpenAddForm}>
-                      <Plus size={16} /> Blend New Perfume
+                    <h2>Catalog Reserves</h2>
+                    <button onClick={handleOpenAddForm} className="gold-button solid">
+                      <Plus size={16} /> Compound New Blend
                     </button>
                   </div>
 
@@ -311,8 +440,10 @@ export default function Admin() {
                     <div className="form-modal-overlay">
                       <div className="product-form-card glass-panel animate-fade">
                         <div className="form-header">
-                          <h3>{editingProduct ? `Refining Recipe: ${editingProduct.name}` : 'Formulate New Fragrance'}</h3>
-                          <button className="close-form-btn" onClick={() => setShowProductForm(false)}><X size={18}/></button>
+                          <h3>{editingProduct ? 'Modify Secret Recipe' : 'Add New Formulation'}</h3>
+                          <button onClick={() => setShowProductForm(false)} className="close-form-btn">
+                            <X size={20} />
+                          </button>
                         </div>
 
                         <form onSubmit={handleProductSubmit} className="product-admin-form">
@@ -327,7 +458,7 @@ export default function Admin() {
                               />
                             </div>
                             <div className="form-group">
-                              <label>Brand / House Line</label>
+                              <label>Brand House</label>
                               <input 
                                 type="text" 
                                 required 
@@ -339,7 +470,16 @@ export default function Admin() {
 
                           <div className="form-row">
                             <div className="form-group">
-                              <label>Category (Scent Family)</label>
+                              <label>Retail Price (₹)</label>
+                              <input 
+                                type="number" 
+                                required 
+                                value={productFormData.price} 
+                                onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} 
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Concentration Category</label>
                               <select 
                                 value={productFormData.category} 
                                 onChange={(e) => setProductFormData({...productFormData, category: e.target.value})}
@@ -350,30 +490,19 @@ export default function Admin() {
                                 <option value="Oriental">Oriental</option>
                               </select>
                             </div>
-                            <div className="form-group">
-                              <label>Retail Price ($)</label>
-                              <input 
-                                type="number" 
-                                step="0.01" 
-                                required 
-                                value={productFormData.price} 
-                                onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} 
-                              />
-                            </div>
                           </div>
 
                           <div className="form-row">
                             <div className="form-group">
-                              <label>Bottle Image URL</label>
+                              <label>Image Reference URL</label>
                               <input 
                                 type="text" 
                                 value={productFormData.image} 
                                 onChange={(e) => setProductFormData({...productFormData, image: e.target.value})} 
-                                placeholder="https://unsplash.com/..."
                               />
                             </div>
                             <div className="form-group">
-                              <label>Stock Qty</label>
+                              <label>Initial Stock (Units)</label>
                               <input 
                                 type="number" 
                                 required 
@@ -385,35 +514,35 @@ export default function Admin() {
 
                           <div className="form-row note-inputs">
                             <div className="form-group">
-                              <label>Top Notes</label>
+                              <label>Top Accord Notes</label>
                               <input 
                                 type="text" 
+                                placeholder="e.g. Saffron, Rose"
                                 value={productFormData.top_notes} 
                                 onChange={(e) => setProductFormData({...productFormData, top_notes: e.target.value})} 
-                                placeholder="e.g. Cardamom, Lemon"
                               />
                             </div>
                             <div className="form-group">
-                              <label>Heart (Middle) Notes</label>
+                              <label>Heart Accord Notes</label>
                               <input 
                                 type="text" 
+                                placeholder="e.g. Amberwood"
                                 value={productFormData.middle_notes} 
                                 onChange={(e) => setProductFormData({...productFormData, middle_notes: e.target.value})} 
-                                placeholder="e.g. Rose, Jasmine"
                               />
                             </div>
                             <div className="form-group">
-                              <label>Base Notes</label>
+                              <label>Base Accord Notes</label>
                               <input 
                                 type="text" 
+                                placeholder="e.g. Cedar, Musk"
                                 value={productFormData.base_notes} 
                                 onChange={(e) => setProductFormData({...productFormData, base_notes: e.target.value})} 
-                                placeholder="e.g. Amber, Sandalwood"
                               />
                             </div>
                           </div>
 
-                          <div className="form-group full-width">
+                          <div className="form-group">
                             <label>Descriptive Summary</label>
                             <textarea 
                               rows="3" 
@@ -545,6 +674,166 @@ export default function Admin() {
                           {orders.length === 0 && (
                             <tr>
                               <td colSpan="6" className="empty-row">No orders recorded yet.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 4: Registrants Vault (Users List) */}
+              {activeTab === 'users' && (
+                <div className="tab-content users-tab animate-fade">
+                  <h2>Registrants Vault (Users List)</h2>
+                  <div className="orders-table-card glass-panel">
+                    <div className="table-wrapper">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>User ID</th>
+                            <th>Email Address</th>
+                            <th>Role / Clearance Level</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {usersList.map((usr) => (
+                            <tr key={usr.id}>
+                              <td>#{usr.id}</td>
+                              <td>{usr.email}</td>
+                              <td>
+                                <span className={`status-badge ${usr.role === 'admin' ? 'completed' : 'pending'}`}>
+                                  {usr.role.toUpperCase()}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab 5: Treasury Promos (Coupons Manager) */}
+              {activeTab === 'coupons' && (
+                <div className="tab-content coupons-tab animate-fade">
+                  <div className="tab-header">
+                    <h2>Treasury Promos (Coupons Manager)</h2>
+                    <button onClick={() => setShowCouponModal(true)} className="gold-button solid">
+                      <Plus size={16} /> Create Promo Code
+                    </button>
+                  </div>
+
+                  {showCouponModal && (
+                    <div className="form-modal-overlay">
+                      <div className="product-form-card glass-panel animate-fade">
+                        <div className="form-header">
+                          <h3>Create Treasury Promo Code</h3>
+                          <button onClick={() => setShowCouponModal(false)} className="close-form-btn">
+                            <X size={20} />
+                          </button>
+                        </div>
+
+                        <form onSubmit={handleAddCoupon} className="product-admin-form">
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Promo Code (Uppercase)</label>
+                              <input 
+                                type="text" 
+                                required 
+                                placeholder="e.g. ASTRA50"
+                                value={couponFormData.code} 
+                                onChange={(e) => setCouponFormData({...couponFormData, code: e.target.value})} 
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Discount Type</label>
+                              <select 
+                                value={couponFormData.discountType} 
+                                onChange={(e) => setCouponFormData({...couponFormData, discountType: e.target.value})}
+                              >
+                                <option value="percent">Percentage Off (%)</option>
+                                <option value="flat">Flat Discount (₹)</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label>Discount Value</label>
+                              <input 
+                                type="number" 
+                                required 
+                                placeholder="e.g. 10 or 1000"
+                                value={couponFormData.discountValue} 
+                                onChange={(e) => setCouponFormData({...couponFormData, discountValue: e.target.value})} 
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label>Minimum Purchase (₹)</label>
+                              <input 
+                                type="number" 
+                                placeholder="e.g. 5000"
+                                value={couponFormData.minSpend} 
+                                onChange={(e) => setCouponFormData({...couponFormData, minSpend: e.target.value})} 
+                              />
+                            </div>
+                          </div>
+
+                          <div className="form-group">
+                            <label>Promotion Description</label>
+                            <textarea 
+                              rows="2" 
+                              required
+                              placeholder="Describe the offer rules..."
+                              value={couponFormData.description} 
+                              onChange={(e) => setCouponFormData({...couponFormData, description: e.target.value})} 
+                            />
+                          </div>
+
+                          <button type="submit" className="gold-button solid save-product-btn">
+                            Activate Promo Code
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="orders-table-card glass-panel">
+                    <div className="table-wrapper">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Promo Code</th>
+                            <th>Value</th>
+                            <th>Min Purchase</th>
+                            <th>Offer Details</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {coupons.map((coupon, index) => (
+                            <tr key={index}>
+                              <td className="gold-text"><strong>{coupon.code}</strong></td>
+                              <td>{coupon.discountType === 'percent' ? `${coupon.discountValue}% Off` : `₹${coupon.discountValue} Off`}</td>
+                              <td>₹{(coupon.minSpend || 0).toLocaleString('en-IN')}</td>
+                              <td>{coupon.description}</td>
+                              <td>
+                                <button 
+                                  onClick={() => handleDeleteCoupon(coupon.code)} 
+                                  className="delete-btn"
+                                  title="Retire promo code"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {coupons.length === 0 && (
+                            <tr>
+                              <td colSpan="5" className="empty-row">No active promo codes found.</td>
                             </tr>
                           )}
                         </tbody>
