@@ -21,6 +21,11 @@ export default function Login() {
     setLoading(true);
 
     if (activeTab === 'register') {
+      if (password.length < 6) {
+        setError('Passcode must be at least 6 characters long');
+        setLoading(false);
+        return;
+      }
       if (password !== confirmPassword) {
         setError('Passwords do not match');
         setLoading(false);
@@ -139,16 +144,7 @@ export default function Login() {
           </button>
         </form>
  
-        <div className="login-hint">
-          {activeTab === 'login' ? (
-            <p style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <span>Admin Access: <strong>admin@astraire.com</strong> / <strong>admin123</strong></span>
-              <span>User Access: <strong>user@astraire.com</strong> / <strong>user123</strong></span>
-            </p>
-          ) : (
-            <p>You can also enter any custom credentials to auto-register offline and preview the profile.</p>
-          )}
-        </div>
+
       </div>
     </div>
   );

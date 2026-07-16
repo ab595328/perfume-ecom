@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../config/firebase';
 import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { 
-  ShieldCheck, Plus, Edit2, Trash2, LayoutDashboard, ShoppingBag, 
-  ClipboardList, LogOut, Check, X, Users as UsersIcon, Ticket 
+import {
+  ShieldCheck, Plus, Edit2, Trash2, LayoutDashboard, ShoppingBag,
+  ClipboardList, LogOut, Check, X, Users as UsersIcon, Ticket, Sparkles
 } from 'lucide-react';
 import './Admin.css';
 
@@ -111,9 +111,7 @@ export default function Admin() {
         } catch (e) {
           console.error("Firestore read products error:", e);
         }
-      }
-      
-      if (prodData.length === 0) {
+      } else {
         prodData = [
           { id: '1', name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins.' },
           { id: '2', name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine.' },
@@ -138,11 +136,13 @@ export default function Admin() {
 
       // Merge database orders and local mock orders
       const mergedOrders = [...dbOrders];
-      localOrders.forEach(localOrder => {
-        if (!mergedOrders.some(dbOrder => dbOrder.id === localOrder.id)) {
-          mergedOrders.push(localOrder);
-        }
-      });
+      if (!db) {
+        localOrders.forEach(localOrder => {
+          if (!mergedOrders.some(dbOrder => dbOrder.id === localOrder.id)) {
+            mergedOrders.push(localOrder);
+          }
+        });
+      }
       mergedOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setOrders(mergedOrders);
 
@@ -158,18 +158,20 @@ export default function Admin() {
           console.error("Firestore read users error:", e);
         }
       }
-      const mockUsers = [
-        { id: '1', email: 'admin@astraire.com', role: 'admin' },
-        { id: '2', email: 'user@astraire.com', role: 'user' },
-        { id: '3', email: 'customer@astraire.com', role: 'user' },
-        { id: '4', email: 'connoisseur@luxury.com', role: 'user' }
-      ];
       const mergedUsers = [...userData];
-      mockUsers.forEach(mu => {
-        if (!mergedUsers.some(u => u.email === mu.email)) {
-          mergedUsers.push(mu);
-        }
-      });
+      if (!db) {
+        const mockUsers = [
+          { id: '1', email: 'admin@astraire.com', role: 'admin' },
+          { id: '2', email: 'user@astraire.com', role: 'user' },
+          { id: '3', email: 'customer@astraire.com', role: 'user' },
+          { id: '4', email: 'connoisseur@luxury.com', role: 'user' }
+        ];
+        mockUsers.forEach(mu => {
+          if (!mergedUsers.some(u => u.email === mu.email)) {
+            mergedUsers.push(mu);
+          }
+        });
+      }
       setUsersList(mergedUsers);
 
       // 4. Fetch/Seed Coupons
@@ -177,13 +179,7 @@ export default function Admin() {
       if (savedCoupons) {
         setCoupons(JSON.parse(savedCoupons));
       } else {
-        const defaultCoupons = [
-          { code: 'ASTRA10', discountType: 'percent', discountValue: 10, minSpend: 5000, description: '10% off all private compounding reserves.' },
-          { code: 'ROYAL20', discountType: 'percent', discountValue: 20, minSpend: 15000, description: '20% off priority reserves for connoisseurs.' },
-          { code: 'WELCOME1000', discountType: 'flat', discountValue: 1000, minSpend: 10000, description: 'Flat ₹1,000 off on first catalog purchase.' }
-        ];
-        localStorage.setItem('aura_coupons', JSON.stringify(defaultCoupons));
-        setCoupons(defaultCoupons);
+        setCoupons([]);
       }
 
       setLoading(false);
@@ -277,6 +273,44 @@ export default function Admin() {
     setShowProductForm(false);
   };
 
+  // Seed 10 Luxury Products to Firestore
+  const handleSeedProducts = async () => {
+    if (!db) {
+      alert("Firestore is not initialized.");
+      return;
+    }
+    if (!window.confirm("This will seed 10 luxury perfumes with custom notes and generated assets directly to your Firestore database. Proceed?")) {
+      return;
+    }
+
+    const tenLuxuryProducts = [
+      { name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins. Maturing for 180 days in oak casks.', top_notes: 'Saffron, Rose', middle_notes: 'Patchouli, Jasmine', base_notes: 'Agarwood, Amberwood', image: '/images/oud_elixir.png' },
+      { name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine. A warm velvet hug.', top_notes: 'Bergamot, Saffron', middle_notes: 'Damask Rose, Night Jasmine', base_notes: 'Jasmine, Patchouli, Amber', image: '/images/auree.png' },
+      { name: 'Santal de Ciel', brand: 'Astraire Private Blend', category: 'Woody', price: 21000, stock: 15, description: 'Aged Mysore Sandalwood extract with ambergris fixatives. High longevity.', top_notes: 'Sandalwood, Cardamom', middle_notes: 'Amber, Vetiver', base_notes: 'Cedarwood, Vetiver', image: '/images/santal_ciel.png' },
+      { name: 'Noir Extrême', brand: 'Astraire Private Blend', category: 'Oriental', price: 26000, stock: 5, description: 'Black Vanilla beans macerated in Limousin oak barrels. Smoky and dark.', top_notes: 'Black Pepper, Vanilla', middle_notes: 'Oakwood, Tobacco', base_notes: 'Smoked Wood, Incense, Cedar', image: '/images/noir_extreme.png' },
+      { name: 'Rose de Nuit', brand: 'Astraire Private Blend', category: 'Floral', price: 19500, stock: 7, description: 'Midnight dark velvet Rose Damascena blended with Peony accents and earthy patchouli.', top_notes: 'Pink Pepper, Cassis', middle_notes: 'Midnight Rose, Peony', base_notes: 'White Musk, Patchouli', image: '/images/rose_de_nuit.png' },
+      { name: 'Musc Pur', brand: 'Astraire Private Blend', category: 'Fresh', price: 16000, stock: 14, description: 'Soft laundry-fresh aldehydes, white cotton blossom, and absolute clean musk.', top_notes: 'White Aldehydes, Neroli', middle_notes: 'Cotton Accord, Lily of the Valley', base_notes: 'Clean Musks, White Woods', image: '/images/musc_pur.png' },
+      { name: 'Ambre Royal', brand: 'Astraire Private Blend', category: 'Oriental', price: 23000, stock: 9, description: 'Deep, resinous amber, warm labdanum resins, and organic Madagascar vanilla pods.', top_notes: 'Cinnamon, Bergamot', middle_notes: 'Warm Amber, Labdanum', base_notes: 'Vanilla Absolute, Benzoin', image: '/images/ambre_royal.png' },
+      { name: 'Vétiver Bleu', brand: 'Astraire Private Blend', category: 'Fresh', price: 17500, stock: 11, description: 'Marine salty air blended with organic Haitian vetiver root and raw cedarwood.', top_notes: 'Grapefruit, Sea Salt', middle_notes: 'Sage, Geranium', base_notes: 'Haitian Vetiver, Cedarwood', image: '/images/vetiver_bleu.png' },
+      { name: 'Cuir Sauvage', brand: 'Astraire Private Blend', category: 'Woody', price: 28000, stock: 6, description: 'Intense raw leather accord, dry saffron spice, and smoky black amber wood.', top_notes: 'Thyme, Saffron', middle_notes: 'Tuscan Leather, Raspberry', base_notes: 'Black Amber, Suede', image: '/images/cuir_sauvage.png' },
+      { name: 'Citron d\'Or', brand: 'Astraire Private Blend', category: 'Fresh', price: 15500, stock: 20, description: 'Zesty cold-pressed Sicilian lemon, refreshing wild mint, and warm amber fixative.', top_notes: 'Sicilian Lemon, Mandarin', middle_notes: 'Orange Blossom, Mint', base_notes: 'Cedar, White Amber', image: '/images/citron_dor.png' }
+    ];
+
+    try {
+      setLoading(true);
+      const seedPromises = tenLuxuryProducts.map(async (p) => {
+        return addDoc(collection(db, 'products'), p);
+      });
+      await Promise.all(seedPromises);
+      alert("Successfully seeded all 10 luxury products to your Firestore!");
+      loadData();
+    } catch (err) {
+      console.error("Error seeding products to Firestore:", err);
+      alert("Error seeding products: " + err.message);
+      setLoading(false);
+    }
+  };
+
   // Delete Product
   const handleDeleteProduct = async (id) => {
     if (!window.confirm("Are you sure you want to retire this fragrance recipe?")) return;
@@ -354,7 +388,7 @@ export default function Admin() {
   // Math Statistics
   const totalRevenue = orders.reduce((sum, order) => {
     return order.status === 'completed' || order.status === 'pending' || order.status === 'processing'
-      ? sum + order.total_amount 
+      ? sum + order.total_amount
       : sum;
   }, 0);
 
@@ -376,31 +410,31 @@ export default function Admin() {
           </div>
 
           <div className="sidebar-nav">
-            <button 
+            <button
               className={`nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
               onClick={() => setActiveTab('dashboard')}
             >
               <LayoutDashboard size={18} /> Dashboard
             </button>
-            <button 
+            <button
               className={`nav-btn ${activeTab === 'products' ? 'active' : ''}`}
               onClick={() => setActiveTab('products')}
             >
               <ShoppingBag size={18} /> Catalog Management
             </button>
-            <button 
+            <button
               className={`nav-btn ${activeTab === 'orders' ? 'active' : ''}`}
               onClick={() => setActiveTab('orders')}
             >
               <ClipboardList size={18} /> Order Monitor {pendingOrders > 0 && <span className="nav-badge">{pendingOrders}</span>}
             </button>
-            <button 
+            <button
               className={`nav-btn ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => setActiveTab('users')}
             >
               <UsersIcon size={18} /> Registrants Vault
             </button>
-            <button 
+            <button
               className={`nav-btn ${activeTab === 'coupons' ? 'active' : ''}`}
               onClick={() => setActiveTab('coupons')}
             >
@@ -487,9 +521,14 @@ export default function Admin() {
                 <div className="tab-content products-tab animate-fade">
                   <div className="tab-header">
                     <h2>Catalog Reserves</h2>
-                    <button onClick={handleOpenAddForm} className="gold-button solid">
-                      <Plus size={16} /> Compound New Blend
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      {/* <button onClick={handleSeedProducts} className="gold-button">
+                        <Sparkles size={14} /> Seed 10 Luxury Products
+                      </button> */}
+                      <button onClick={handleOpenAddForm} className="gold-button solid">
+                        <Plus size={16} /> Compound New Blend
+                      </button>
+                    </div>
                   </div>
 
                   {showProductForm && (
@@ -506,20 +545,20 @@ export default function Admin() {
                           <div className="form-row">
                             <div className="form-group">
                               <label>Fragrance Name</label>
-                              <input 
-                                type="text" 
-                                required 
-                                value={productFormData.name} 
-                                onChange={(e) => setProductFormData({...productFormData, name: e.target.value})} 
+                              <input
+                                type="text"
+                                required
+                                value={productFormData.name}
+                                onChange={(e) => setProductFormData({ ...productFormData, name: e.target.value })}
                               />
                             </div>
                             <div className="form-group">
                               <label>Brand House</label>
-                              <input 
-                                type="text" 
-                                required 
-                                value={productFormData.brand} 
-                                onChange={(e) => setProductFormData({...productFormData, brand: e.target.value})} 
+                              <input
+                                type="text"
+                                required
+                                value={productFormData.brand}
+                                onChange={(e) => setProductFormData({ ...productFormData, brand: e.target.value })}
                               />
                             </div>
                           </div>
@@ -527,18 +566,18 @@ export default function Admin() {
                           <div className="form-row">
                             <div className="form-group">
                               <label>Retail Price (₹)</label>
-                              <input 
-                                type="number" 
-                                required 
-                                value={productFormData.price} 
-                                onChange={(e) => setProductFormData({...productFormData, price: e.target.value})} 
+                              <input
+                                type="number"
+                                required
+                                value={productFormData.price}
+                                onChange={(e) => setProductFormData({ ...productFormData, price: e.target.value })}
                               />
                             </div>
                             <div className="form-group">
                               <label>Concentration Category</label>
-                              <select 
-                                value={productFormData.category} 
-                                onChange={(e) => setProductFormData({...productFormData, category: e.target.value})}
+                              <select
+                                value={productFormData.category}
+                                onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })}
                               >
                                 <option value="Woody">Woody</option>
                                 <option value="Floral">Floral</option>
@@ -552,18 +591,18 @@ export default function Admin() {
                             <div className="form-group">
                               <label>Image Reference URL</label>
                               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <input 
-                                  type="text" 
-                                  value={productFormData.image} 
-                                  onChange={(e) => setProductFormData({...productFormData, image: e.target.value})} 
+                                <input
+                                  type="text"
+                                  value={productFormData.image}
+                                  onChange={(e) => setProductFormData({ ...productFormData, image: e.target.value })}
                                   style={{ flexGrow: 1 }}
                                 />
                                 <label className="gold-button solid" style={{ margin: 0, padding: '0.4rem 0.75rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                   Upload
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    onChange={handleImageUpload} 
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
                                     style={{ display: 'none' }}
                                     disabled={uploadingImage}
                                   />
@@ -573,11 +612,11 @@ export default function Admin() {
                             </div>
                             <div className="form-group">
                               <label>Initial Stock (Units)</label>
-                              <input 
-                                type="number" 
-                                required 
-                                value={productFormData.stock} 
-                                onChange={(e) => setProductFormData({...productFormData, stock: e.target.value})} 
+                              <input
+                                type="number"
+                                required
+                                value={productFormData.stock}
+                                onChange={(e) => setProductFormData({ ...productFormData, stock: e.target.value })}
                               />
                             </div>
                           </div>
@@ -585,39 +624,39 @@ export default function Admin() {
                           <div className="form-row note-inputs">
                             <div className="form-group">
                               <label>Top Accord Notes</label>
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 placeholder="e.g. Saffron, Rose"
-                                value={productFormData.top_notes} 
-                                onChange={(e) => setProductFormData({...productFormData, top_notes: e.target.value})} 
+                                value={productFormData.top_notes}
+                                onChange={(e) => setProductFormData({ ...productFormData, top_notes: e.target.value })}
                               />
                             </div>
                             <div className="form-group">
                               <label>Heart Accord Notes</label>
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 placeholder="e.g. Amberwood"
-                                value={productFormData.middle_notes} 
-                                onChange={(e) => setProductFormData({...productFormData, middle_notes: e.target.value})} 
+                                value={productFormData.middle_notes}
+                                onChange={(e) => setProductFormData({ ...productFormData, middle_notes: e.target.value })}
                               />
                             </div>
                             <div className="form-group">
                               <label>Base Accord Notes</label>
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 placeholder="e.g. Cedar, Musk"
-                                value={productFormData.base_notes} 
-                                onChange={(e) => setProductFormData({...productFormData, base_notes: e.target.value})} 
+                                value={productFormData.base_notes}
+                                onChange={(e) => setProductFormData({ ...productFormData, base_notes: e.target.value })}
                               />
                             </div>
                           </div>
 
                           <div className="form-group">
                             <label>Descriptive Summary</label>
-                            <textarea 
-                              rows="3" 
-                              value={productFormData.description} 
-                              onChange={(e) => setProductFormData({...productFormData, description: e.target.value})} 
+                            <textarea
+                              rows="3"
+                              value={productFormData.description}
+                              onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })}
                             />
                           </div>
 
@@ -661,8 +700,8 @@ export default function Admin() {
                               <td>{prod.stock} left</td>
                               <td>
                                 <div className="action-btns">
-                                  <button onClick={() => handleOpenEditForm(prod)} className="edit-btn" title="Modify recipe details"><Edit2 size={14}/></button>
-                                  <button onClick={() => handleDeleteProduct(prod.id)} className="delete-btn" title="Decommission blend"><Trash2 size={14}/></button>
+                                  <button onClick={() => handleOpenEditForm(prod)} className="edit-btn" title="Modify recipe details"><Edit2 size={14} /></button>
+                                  <button onClick={() => handleDeleteProduct(prod.id)} className="delete-btn" title="Decommission blend"><Trash2 size={14} /></button>
                                 </div>
                               </td>
                             </tr>
@@ -720,8 +759,8 @@ export default function Admin() {
                               <td>
                                 <div className="status-actions">
                                   {order.status !== 'completed' && (
-                                    <button 
-                                      onClick={() => handleUpdateOrderStatus(order.id, 'completed')} 
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, 'completed')}
                                       className="complete-order-btn"
                                       title="Mark Dispatched / Completed"
                                     >
@@ -729,8 +768,8 @@ export default function Admin() {
                                     </button>
                                   )}
                                   {order.status !== 'cancelled' && (
-                                    <button 
-                                      onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} 
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')}
                                       className="cancel-order-btn"
                                       title="Void / Cancel Transaction"
                                     >
@@ -810,19 +849,19 @@ export default function Admin() {
                           <div className="form-row">
                             <div className="form-group">
                               <label>Promo Code (Uppercase)</label>
-                              <input 
-                                type="text" 
-                                required 
+                              <input
+                                type="text"
+                                required
                                 placeholder="e.g. ASTRA50"
-                                value={couponFormData.code} 
-                                onChange={(e) => setCouponFormData({...couponFormData, code: e.target.value})} 
+                                value={couponFormData.code}
+                                onChange={(e) => setCouponFormData({ ...couponFormData, code: e.target.value })}
                               />
                             </div>
                             <div className="form-group">
                               <label>Discount Type</label>
-                              <select 
-                                value={couponFormData.discountType} 
-                                onChange={(e) => setCouponFormData({...couponFormData, discountType: e.target.value})}
+                              <select
+                                value={couponFormData.discountType}
+                                onChange={(e) => setCouponFormData({ ...couponFormData, discountType: e.target.value })}
                               >
                                 <option value="percent">Percentage Off (%)</option>
                                 <option value="flat">Flat Discount (₹)</option>
@@ -833,33 +872,33 @@ export default function Admin() {
                           <div className="form-row">
                             <div className="form-group">
                               <label>Discount Value</label>
-                              <input 
-                                type="number" 
-                                required 
+                              <input
+                                type="number"
+                                required
                                 placeholder="e.g. 10 or 1000"
-                                value={couponFormData.discountValue} 
-                                onChange={(e) => setCouponFormData({...couponFormData, discountValue: e.target.value})} 
+                                value={couponFormData.discountValue}
+                                onChange={(e) => setCouponFormData({ ...couponFormData, discountValue: e.target.value })}
                               />
                             </div>
                             <div className="form-group">
                               <label>Minimum Purchase (₹)</label>
-                              <input 
-                                type="number" 
+                              <input
+                                type="number"
                                 placeholder="e.g. 5000"
-                                value={couponFormData.minSpend} 
-                                onChange={(e) => setCouponFormData({...couponFormData, minSpend: e.target.value})} 
+                                value={couponFormData.minSpend}
+                                onChange={(e) => setCouponFormData({ ...couponFormData, minSpend: e.target.value })}
                               />
                             </div>
                           </div>
 
                           <div className="form-group">
                             <label>Promotion Description</label>
-                            <textarea 
-                              rows="2" 
+                            <textarea
+                              rows="2"
                               required
                               placeholder="Describe the offer rules..."
-                              value={couponFormData.description} 
-                              onChange={(e) => setCouponFormData({...couponFormData, description: e.target.value})} 
+                              value={couponFormData.description}
+                              onChange={(e) => setCouponFormData({ ...couponFormData, description: e.target.value })}
                             />
                           </div>
 
@@ -891,8 +930,8 @@ export default function Admin() {
                               <td>₹{(coupon.minSpend || 0).toLocaleString('en-IN')}</td>
                               <td>{coupon.description}</td>
                               <td>
-                                <button 
-                                  onClick={() => handleDeleteCoupon(coupon.code)} 
+                                <button
+                                  onClick={() => handleDeleteCoupon(coupon.code)}
                                   className="delete-btn"
                                   title="Retire promo code"
                                 >

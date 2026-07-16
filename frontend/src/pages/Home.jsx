@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Sparkles, Compass, ShieldCheck, Heart, ArrowRight, 
-  ChevronLeft, ChevronRight, Star, Award, ShieldAlert 
+import {
+  Sparkles, Compass, ShieldCheck, Heart, ArrowRight,
+  ChevronLeft, ChevronRight, Star, Award, ShieldAlert
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { db } from '../config/firebase';
@@ -61,8 +61,8 @@ function GoldParticlesCanvas() {
         }
       }
       draw() {
-        const color = this.colorType === 'champagne-gold' 
-          ? `rgba(223, 185, 127, ${this.opacity})` 
+        const color = this.colorType === 'champagne-gold'
+          ? `rgba(223, 185, 127, ${this.opacity})`
           : `rgba(224, 79, 102, ${this.opacity * 0.75})`;
         const shadow = this.colorType === 'champagne-gold' ? 'rgba(223, 185, 127, 0.8)' : 'rgba(224, 79, 102, 0.6)';
 
@@ -267,7 +267,7 @@ export default function Home({ onOpenQuiz }) {
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1 }}
@@ -278,9 +278,9 @@ export default function Home({ onOpenQuiz }) {
         {/* Background Banner Image Slider */}
         <div className="hero-video-wrapper" style={{ overflow: 'hidden', position: 'absolute', width: '100%', height: '100%' }}>
           <AnimatePresence initial={false}>
-            <motion.img 
+            <motion.img
               key={activeHeroSlide}
-              src={heroSlides[activeHeroSlide].image} 
+              src={heroSlides[activeHeroSlide].image}
               alt={`Astraire Banner ${activeHeroSlide + 1}`}
               className="hero-video"
               initial={{ x: '100%' }}
@@ -352,7 +352,7 @@ export default function Home({ onOpenQuiz }) {
         </div>
 
         <div className="slider-viewport">
-          <div 
+          <div
             className="slider-track"
             style={{ transform: `translateX(-${sliderIndex * 50}%)` }}
           >
@@ -377,7 +377,7 @@ export default function Home({ onOpenQuiz }) {
                       <span className="card-price">₹{product.price.toLocaleString('en-IN')}</span>
                       <div className="card-btns">
                         <Link to={`/product/${product.id}`} className="detail-link">Details</Link>
-                        <button 
+                        <button
                           className="gold-button solid add-btn"
                           onClick={() => addToCart(product, 1)}
                         >
@@ -409,7 +409,7 @@ export default function Home({ onOpenQuiz }) {
         <div className="signature-oud-glow"></div>
         <div className="signature-oud-inner container">
           <div className="oud-spotlight-image-col">
-            <motion.div 
+            <motion.div
               whileInView={{ opacity: 1, scale: 1 }}
               initial={{ opacity: 0, scale: 0.95 }}
               viewport={{ once: true }}
@@ -428,7 +428,7 @@ export default function Home({ onOpenQuiz }) {
             <p className="oud-story-p">
               Distilled in the heart of the Cardamom Mountains, our Cambodian agarwood is matured for months in authentic historic French Limousin oak barrels to yield an unmatched rich, resinous profile. High concentrations of raw botanical oil compound a velvet, woody sillage that commands presence.
             </p>
-            
+
             <div className="oud-details-grid">
               <div className="oud-detail-item">
                 <span>CONCENTRATION</span>
@@ -462,7 +462,7 @@ export default function Home({ onOpenQuiz }) {
         <div className="notes-visualizer-layout">
           {/* Note Selection Tiers */}
           <div className="notes-pyramid-selectors">
-            <button 
+            <button
               className={`pyramid-tier-btn top-btn ${activeNoteTier === 'top' ? 'active' : ''}`}
               onClick={() => setActiveNoteTier('top')}
             >
@@ -471,7 +471,7 @@ export default function Home({ onOpenQuiz }) {
               <p>Sparkling & Volatile (Bergamot, Saffron)</p>
             </button>
 
-            <button 
+            <button
               className={`pyramid-tier-btn middle-btn ${activeNoteTier === 'middle' ? 'active' : ''}`}
               onClick={() => setActiveNoteTier('middle')}
             >
@@ -480,7 +480,7 @@ export default function Home({ onOpenQuiz }) {
               <p>Deep & Velvet (Turkish Rose, Iris)</p>
             </button>
 
-            <button 
+            <button
               className={`pyramid-tier-btn base-btn ${activeNoteTier === 'base' ? 'active' : ''}`}
               onClick={() => setActiveNoteTier('base')}
             >
@@ -494,7 +494,7 @@ export default function Home({ onOpenQuiz }) {
           <div className="notes-detail-display glass-panel">
             <AnimatePresence mode="wait">
               {activeNoteTier === 'top' && (
-                <motion.div 
+                <motion.div
                   key="top-details"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -525,7 +525,7 @@ export default function Home({ onOpenQuiz }) {
               )}
 
               {activeNoteTier === 'middle' && (
-                <motion.div 
+                <motion.div
                   key="middle-details"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -556,7 +556,7 @@ export default function Home({ onOpenQuiz }) {
               )}
 
               {activeNoteTier === 'base' && (
-                <motion.div 
+                <motion.div
                   key="base-details"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -600,7 +600,7 @@ export default function Home({ onOpenQuiz }) {
           </div>
 
           <div className="why-choose-grid">
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8 }}
               className="why-card glass-panel"
             >
@@ -609,7 +609,7 @@ export default function Home({ onOpenQuiz }) {
               <p>Every decant is fully compliant with the highest international standards of safety and formulation transparency.</p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8 }}
               className="why-card glass-panel"
             >
@@ -618,7 +618,7 @@ export default function Home({ onOpenQuiz }) {
               <p>Our formulation is strictly Extrait de Parfum, featuring high oil concentrations that linger for 12 to 24 hours.</p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8 }}
               className="why-card glass-panel"
             >
@@ -627,7 +627,7 @@ export default function Home({ onOpenQuiz }) {
               <p>We source authentic botanical extracts: damask rose petals, Florentine iris root, and pure Cambodian agarwood.</p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               whileHover={{ y: -8 }}
               className="why-card glass-panel"
             >
@@ -660,7 +660,7 @@ export default function Home({ onOpenQuiz }) {
 
         <div className="testimonial-card-wrapper glass-panel">
           <AnimatePresence mode="wait">
-            <motion.div 
+            <motion.div
               key={activeTestimonial}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -683,7 +683,7 @@ export default function Home({ onOpenQuiz }) {
 
           <div className="testimonial-bullets">
             {testimonials.map((_, i) => (
-              <button 
+              <button
                 key={i}
                 onClick={() => setActiveTestimonial(i)}
                 className={`test-bullet ${i === activeTestimonial ? 'active' : ''}`}
@@ -715,7 +715,7 @@ export default function Home({ onOpenQuiz }) {
                 <p>{set.description}</p>
                 <div className="gift-footer">
                   <span className="gift-price">₹{set.price.toLocaleString('en-IN')}</span>
-                  <button 
+                  <button
                     onClick={() => addToCart(set, 1)}
                     className="gold-button solid"
                   >
@@ -857,19 +857,19 @@ export default function Home({ onOpenQuiz }) {
 
             <AnimatePresence mode="wait">
               {!newsletterSubmitted ? (
-                <motion.form 
+                <motion.form
                   key="newsletter-form"
-                  onSubmit={handleNewsletterSubmit} 
+                  onSubmit={handleNewsletterSubmit}
                   className="registry-form"
                   initial={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <input 
-                    type="email" 
-                    placeholder="Enter your email address" 
+                  <input
+                    type="email"
+                    placeholder="Enter your email address"
                     value={newsletterEmail}
                     onChange={(e) => setNewsletterEmail(e.target.value)}
-                    required 
+                    required
                     className="registry-input"
                   />
                   <button type="submit" className="gold-button solid registry-btn">
@@ -877,7 +877,7 @@ export default function Home({ onOpenQuiz }) {
                   </button>
                 </motion.form>
               ) : (
-                <motion.div 
+                <motion.div
                   key="newsletter-success"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}

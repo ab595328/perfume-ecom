@@ -15,7 +15,7 @@ export default function Shop() {
   const [sortBy, setSortBy] = useState('default');
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const { addToCart } = useCart();
   const location = useLocation();
 
@@ -24,7 +24,7 @@ export default function Shop() {
     const params = new URLSearchParams(location.search);
     const cat = params.get('category');
     const search = params.get('search');
-    
+
     if (cat) {
       setCategoryFilter(cat);
     } else {
@@ -42,7 +42,7 @@ export default function Shop() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      
+
       const defaultMockProducts = [
         { id: '1', name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins. Maturing for 180 days in oak casks.', top_notes: 'Saffron, Rose', middle_notes: 'Patchouli, Jasmine', base_notes: 'Agarwood, Amberwood', image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=600&auto=format&fit=crop' },
         { id: '2', name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine. A warm velvet hug.', top_notes: 'Bergamot, Saffron', middle_notes: 'Damask Rose, Night Jasmine', base_notes: 'Jasmine, Patchouli, Amber', image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=600&auto=format&fit=crop' },
@@ -57,18 +57,6 @@ export default function Shop() {
           snap.forEach(docSnap => {
             list.push({ id: docSnap.id, ...docSnap.data() });
           });
-
-          // Seeding empty Firestore
-          if (list.length === 0) {
-            console.log('Seeding initial catalogue to Firestore...');
-            const seedPromises = defaultMockProducts.map(async (p) => {
-              const { id, ...data } = p;
-              await setDoc(doc(db, 'products', id), data);
-              return p;
-            });
-            list = await Promise.all(seedPromises);
-          }
-
           setProducts(list);
           setLoading(false);
           return;
@@ -100,8 +88,8 @@ export default function Shop() {
     // Filter by Search Query
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      result = result.filter(p => 
-        p.name.toLowerCase().includes(q) || 
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
         p.brand.toLowerCase().includes(q) ||
         p.description.toLowerCase().includes(q)
       );
@@ -132,8 +120,8 @@ export default function Shop() {
 
       {/* Mobile Filters Trigger */}
       <div className="mobile-filter-bar">
-        <button 
-          className="mobile-filters-toggle gold-button" 
+        <button
+          className="mobile-filters-toggle gold-button"
           onClick={() => setShowFilters(!showFilters)}
         >
           <Filter size={14} /> {showFilters ? "Close Filters" : "Filter Reserves"}
@@ -150,9 +138,9 @@ export default function Shop() {
 
           <div className="filter-group">
             <h4>Search</h4>
-            <input 
-              type="text" 
-              placeholder="Scent, note, key ingredient..." 
+            <input
+              type="text"
+              placeholder="Scent, note, key ingredient..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
@@ -177,10 +165,10 @@ export default function Shop() {
           <div className="filter-group">
             <h4>Maximum Price</h4>
             <div className="price-slider-wrapper">
-              <input 
-                type="range" 
-                min="5000" 
-                max="30000" 
+              <input
+                type="range"
+                min="5000"
+                max="30000"
                 step="500"
                 value={priceFilter}
                 onChange={(e) => setPriceFilter(Number(e.target.value))}
@@ -203,8 +191,8 @@ export default function Shop() {
             </span>
             <div className="sort-wrapper">
               <span>Sort By</span>
-              <select 
-                value={sortBy} 
+              <select
+                value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="sort-select"
               >
@@ -226,7 +214,7 @@ export default function Shop() {
               <ShoppingBag size={40} className="empty-icon" />
               <h3>No blends found</h3>
               <p>Try broadening your filter criteria or clear the search query.</p>
-              <button 
+              <button
                 className="gold-button"
                 onClick={() => {
                   setCategoryFilter('All');
@@ -262,7 +250,7 @@ export default function Shop() {
                         <Link to={`/product/${product.id}`} className="detail-icon-btn" title="View details">
                           <Eye size={18} />
                         </Link>
-                        <button 
+                        <button
                           className="gold-button solid add-btn"
                           onClick={() => addToCart(product, 1)}
                         >

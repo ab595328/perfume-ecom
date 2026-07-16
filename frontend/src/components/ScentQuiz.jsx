@@ -97,12 +97,12 @@ export default function ScentQuiz({ isOpen, onClose }) {
       // Find dominant category from first 2 questions
       const categories = finalAnswers.slice(0, 2).map(a => a.category).filter(Boolean);
       let targetCategory = "Woody"; // Default fallback
-      
+
       if (categories.length > 0) {
         // Tally categories
         const counts = {};
         categories.forEach(cat => { counts[cat] = (counts[cat] || 0) + 1; });
-        
+
         // Find maximum count category
         let maxCount = 0;
         for (const cat in counts) {
@@ -145,8 +145,8 @@ export default function ScentQuiz({ isOpen, onClose }) {
 
         {currentStep < QUESTIONS.length && (
           <div className="quiz-progress-bar">
-            <div 
-              className="quiz-progress" 
+            <div
+              className="quiz-progress"
               style={{ width: `${(currentStep / QUESTIONS.length) * 100}%` }}
             ></div>
           </div>
@@ -158,14 +158,14 @@ export default function ScentQuiz({ isOpen, onClose }) {
               <Sparkles className="gold-icon" size={24} />
               <span>Scent Finder Quiz</span>
             </div>
-            
+
             <h2 className="quiz-question-text">{QUESTIONS[currentStep].text}</h2>
-            
+
             <div className="quiz-options">
               {QUESTIONS[currentStep].options.map((opt, idx) => (
-                <button 
-                  key={idx} 
-                  className="quiz-option-btn" 
+                <button
+                  key={idx}
+                  className="quiz-option-btn"
                   onClick={() => handleOptionSelect(opt)}
                 >
                   <span className="option-text">{opt.text}</span>
@@ -197,7 +197,7 @@ export default function ScentQuiz({ isOpen, onClose }) {
                   <h2>{recommendedProduct.name}</h2>
                   <p className="result-brand">{recommendedProduct.brand}</p>
                   <p className="result-desc">{recommendedProduct.description}</p>
-                  
+
                   <div className="result-notes">
                     <p><strong>Top Notes:</strong> {recommendedProduct.top_notes}</p>
                     <p><strong>Heart Notes:</strong> {recommendedProduct.middle_notes}</p>
@@ -205,7 +205,7 @@ export default function ScentQuiz({ isOpen, onClose }) {
                   </div>
 
                   <div className="result-actions">
-                    <button 
+                    <button
                       className="gold-button solid"
                       onClick={() => {
                         addToCart(recommendedProduct, 1);

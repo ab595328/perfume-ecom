@@ -18,7 +18,7 @@ export default function ProductDetail() {
   useEffect(() => {
     const fetchProduct = async () => {
       setLoading(true);
-      
+
       if (db) {
         try {
           const docRef = doc(db, 'products', id);
@@ -41,7 +41,7 @@ export default function ProductDetail() {
         { id: '3', name: 'Santal de Ciel', brand: 'Astraire Private Blend', category: 'Woody', price: 21000, stock: 15, description: 'Aged Mysore Sandalwood extract with ambergris fixatives. High longevity.', top_notes: 'Sandalwood, Cardamom', middle_notes: 'Amber, Vetiver', base_notes: 'Cedarwood, Vetiver', image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=600&auto=format&fit=crop' },
         { id: '4', name: 'Noir Extrême', brand: 'Astraire Private Blend', category: 'Oriental', price: 26000, stock: 5, description: 'Black Vanilla beans macerated in Limousin oak barrels. Smoky and dark.', top_notes: 'Black Pepper, Vanilla', middle_notes: 'Oakwood, Tobacco', base_notes: 'Smoked Wood, Incense, Cedar', image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=600&auto=format&fit=crop' }
       ];
-      
+
       const matched = defaultMockProducts.find(p => p.id === id || p.id === String(id));
       if (matched) {
         setProduct(matched);
@@ -132,14 +132,14 @@ export default function ProductDetail() {
 
           <div className="purchase-controls">
             <div className="qty-selector">
-              <button 
+              <button
                 onClick={() => setQty(prev => Math.max(1, prev - 1))}
                 aria-label="Decrease quantity"
               >
                 <Minus size={14} />
               </button>
               <span>{qty}</span>
-              <button 
+              <button
                 onClick={() => setQty(prev => prev + 1)}
                 aria-label="Increase quantity"
               >
@@ -147,7 +147,7 @@ export default function ProductDetail() {
               </button>
             </div>
 
-            <button 
+            <button
               className={`gold-button solid add-cart-btn ${added ? 'success' : ''}`}
               onClick={handleAddToCart}
             >
@@ -165,8 +165,8 @@ export default function ProductDetail() {
 
           {/* Stock warnings */}
           <p className="stock-notice">
-            {product.stock <= 5 
-              ? `Only ${product.stock} decants left in the house vaults.` 
+            {product.stock <= 5
+              ? `Only ${product.stock} decants left in the house vaults.`
               : 'In stock. Shipped immediately via armored carrier courier.'}
           </p>
         </div>
