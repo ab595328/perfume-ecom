@@ -12,6 +12,7 @@ export function CartProvider({ children }) {
     localStorage.setItem('aura_cart', JSON.stringify(cartItems));
   }, [cartItems]);
 
+
   const addToCart = (product, quantity = 1) => {
     setCartItems(prev => {
       const existing = prev.find(item => item.id === product.id);
