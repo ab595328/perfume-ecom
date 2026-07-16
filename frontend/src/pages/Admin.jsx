@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../config/firebase';
+import { collection, getDocs, doc, setDoc, addDoc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { 
   ShieldCheck, Plus, Edit2, Trash2, LayoutDashboard, ShoppingBag, 
   ClipboardList, LogOut, Check, X, Users as UsersIcon, Ticket 
@@ -44,6 +46,45 @@ export default function Admin() {
     description: ''
   });
 
+  // Cloudinary client image upload state
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      alert("Cloudinary keys (VITE_CLOUDINARY_CLOUD_NAME & VITE_CLOUDINARY_UPLOAD_PRESET) are not configured. Direct client-side image uploading disabled.");
+      return;
+    }
+
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', uploadPreset);
+
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProductFormData(prev => ({ ...prev, image: data.secure_url }));
+      } else {
+        throw new Error(data.error?.message || 'Direct upload process failed');
+      }
+    } catch (err) {
+      console.error("Cloudinary upload error:", err);
+      alert("Upload failed: " + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   // Check admin rights
   useEffect(() => {
     if (!isAdmin) {
@@ -61,29 +102,38 @@ export default function Admin() {
     try {
       // 1. Fetch Products
       let prodData = [];
-      try {
-        const prodRes = await fetch('http://localhost:5000/api/products');
-        prodData = await prodRes.json();
-      } catch (e) {
-        console.warn("Backend products offline. Loading mock catalog list.");
+      if (db) {
+        try {
+          const snap = await getDocs(collection(db, 'products'));
+          snap.forEach(docSnap => {
+            prodData.push({ id: docSnap.id, ...docSnap.data() });
+          });
+        } catch (e) {
+          console.error("Firestore read products error:", e);
+        }
+      }
+      
+      if (prodData.length === 0) {
         prodData = [
-          { id: 1, name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins.' },
-          { id: 2, name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine.' },
-          { id: 3, name: 'Santal de Ciel', brand: 'Astraire Private Blend', category: 'Woody', price: 21000, stock: 15, description: 'Aged Mysore Sandalwood extract with ambergris fixatives.' },
-          { id: 4, name: 'Noir Extrême', brand: 'Astraire Private Blend', category: 'Oriental', price: 26000, stock: 5, description: 'Black Vanilla beans macerated in Limousin oak barrels.' }
+          { id: '1', name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins.' },
+          { id: '2', name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine.' },
+          { id: '3', name: 'Santal de Ciel', brand: 'Astraire Private Blend', category: 'Woody', price: 21000, stock: 15, description: 'Aged Mysore Sandalwood extract with ambergris fixatives.' },
+          { id: '4', name: 'Noir Extrême', brand: 'Astraire Private Blend', category: 'Oriental', price: 26000, stock: 5, description: 'Black Vanilla beans macerated in Limousin oak barrels.' }
         ];
       }
       setProducts(prodData);
 
       // 2. Fetch Orders
       let dbOrders = [];
-      try {
-        const orderRes = await authenticatedFetch('http://localhost:5000/api/orders');
-        if (orderRes.ok) {
-          dbOrders = await orderRes.json();
+      if (db) {
+        try {
+          const snap = await getDocs(collection(db, 'orders'));
+          snap.forEach(docSnap => {
+            dbOrders.push({ id: docSnap.id, ...docSnap.data() });
+          });
+        } catch (e) {
+          console.error("Firestore read orders error:", e);
         }
-      } catch (e) {
-        console.warn("Backend orders offline. Loading local storage orders.");
       }
 
       // Merge database orders and local mock orders
@@ -93,24 +143,26 @@ export default function Admin() {
           mergedOrders.push(localOrder);
         }
       });
-      mergedOrders.sort((a, b) => b.id - a.id);
+      mergedOrders.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       setOrders(mergedOrders);
 
       // 3. Fetch Registered Users
       let userData = [];
-      try {
-        const userRes = await authenticatedFetch('http://localhost:5000/api/users');
-        if (userRes.ok) {
-          userData = await userRes.json();
+      if (db) {
+        try {
+          const snap = await getDocs(collection(db, 'users'));
+          snap.forEach(docSnap => {
+            userData.push({ id: docSnap.id, ...docSnap.data() });
+          });
+        } catch (e) {
+          console.error("Firestore read users error:", e);
         }
-      } catch (e) {
-        console.warn("Backend users list offline. Loading offline mock users.");
       }
       const mockUsers = [
-        { id: 1, email: 'admin@astraire.com', role: 'admin' },
-        { id: 2, email: 'user@astraire.com', role: 'user' },
-        { id: 3, email: 'customer@astraire.com', role: 'user' },
-        { id: 4, email: 'connoisseur@luxury.com', role: 'user' }
+        { id: '1', email: 'admin@astraire.com', role: 'admin' },
+        { id: '2', email: 'user@astraire.com', role: 'user' },
+        { id: '3', email: 'customer@astraire.com', role: 'user' },
+        { id: '4', email: 'connoisseur@luxury.com', role: 'user' }
       ];
       const mergedUsers = [...userData];
       mockUsers.forEach(mu => {
@@ -191,49 +243,57 @@ export default function Admin() {
   // Submit Product Form
   const handleProductSubmit = async (e) => {
     e.preventDefault();
-    const url = editingProduct 
-      ? `http://localhost:5000/api/products/${editingProduct.id}`
-      : 'http://localhost:5000/api/products';
-    const method = editingProduct ? 'PUT' : 'POST';
+    const payload = {
+      name: productFormData.name,
+      brand: productFormData.brand,
+      description: productFormData.description,
+      price: Number(productFormData.price),
+      image: productFormData.image,
+      category: productFormData.category,
+      top_notes: productFormData.top_notes,
+      middle_notes: productFormData.middle_notes,
+      base_notes: productFormData.base_notes,
+      stock: Number(productFormData.stock)
+    };
 
-    try {
-      const response = await authenticatedFetch(url, {
-        method,
-        body: JSON.stringify({
-          ...productFormData,
-          price: Number(productFormData.price),
-          stock: Number(productFormData.stock)
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to save product');
-
-      setShowProductForm(false);
-      loadData();
-    } catch (err) {
-      alert("Error: " + err.message);
+    if (db) {
+      try {
+        if (editingProduct) {
+          await setDoc(doc(db, 'products', editingProduct.id), payload, { merge: true });
+        } else {
+          await addDoc(collection(db, 'products'), payload);
+        }
+        setShowProductForm(false);
+        loadData();
+        return;
+      } catch (err) {
+        console.error("Firestore save product failed:", err);
+        alert("Firestore Error: " + err.message);
+        return;
+      }
     }
+
+    alert("Firestore not initialized. Cannot perform direct DB writes.");
+    setShowProductForm(false);
   };
 
   // Delete Product
   const handleDeleteProduct = async (id) => {
     if (!window.confirm("Are you sure you want to retire this fragrance recipe?")) return;
 
-    try {
-      const response = await authenticatedFetch(`http://localhost:5000/api/products/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to delete product');
+    if (db) {
+      try {
+        await deleteDoc(doc(db, 'products', id));
+        loadData();
+        return;
+      } catch (err) {
+        console.error("Firestore delete product failed:", err);
+        alert("Firestore Error: " + err.message);
+        return;
       }
-
-      loadData();
-    } catch (err) {
-      alert("Error: " + err.message);
     }
+
+    alert("Firestore not initialized. Cannot delete product.");
   };
 
   // Update Order Status
@@ -248,23 +308,19 @@ export default function Admin() {
       return;
     }
 
-    try {
-      const response = await authenticatedFetch(`http://localhost:5000/api/orders/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update order in database');
+    if (db) {
+      try {
+        await updateDoc(doc(db, 'orders', id), { status: newStatus });
+        loadData();
+        return;
+      } catch (err) {
+        console.error("Firestore order update failed:", err);
       }
-
-      loadData();
-    } catch (err) {
-      console.warn("Backend update failed, attempting local fallback", err);
-      const localUpdated = localOrders.map(o => o.id === id ? { ...o, status: newStatus } : o);
-      localStorage.setItem('aura_mock_orders', JSON.stringify(localUpdated));
-      loadData();
     }
+
+    const localUpdated = localOrders.map(o => o.id === id ? { ...o, status: newStatus } : o);
+    localStorage.setItem('aura_mock_orders', JSON.stringify(localUpdated));
+    loadData();
   };
 
   // Add Coupon Handler
@@ -495,11 +551,25 @@ export default function Admin() {
                           <div className="form-row">
                             <div className="form-group">
                               <label>Image Reference URL</label>
-                              <input 
-                                type="text" 
-                                value={productFormData.image} 
-                                onChange={(e) => setProductFormData({...productFormData, image: e.target.value})} 
-                              />
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <input 
+                                  type="text" 
+                                  value={productFormData.image} 
+                                  onChange={(e) => setProductFormData({...productFormData, image: e.target.value})} 
+                                  style={{ flexGrow: 1 }}
+                                />
+                                <label className="gold-button solid" style={{ margin: 0, padding: '0.4rem 0.75rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                  Upload
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    onChange={handleImageUpload} 
+                                    style={{ display: 'none' }}
+                                    disabled={uploadingImage}
+                                  />
+                                </label>
+                              </div>
+                              {uploadingImage && <span style={{ fontSize: '0.7rem', color: 'var(--gold)', marginTop: '0.2rem', display: 'block' }}>Uploading to Cloudinary...</span>}
                             </div>
                             <div className="form-group">
                               <label>Initial Stock (Units)</label>

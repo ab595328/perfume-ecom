@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, ShoppingCart, RefreshCw, ArrowRight } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { db } from '../config/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import './ScentQuiz.css';
 
 const QUESTIONS = [
@@ -45,22 +47,34 @@ export default function ScentQuiz({ isOpen, onClose }) {
 
   useEffect(() => {
     if (isOpen) {
-      fetch('http://localhost:5000/api/products')
-        .then(res => {
-          if (!res.ok) throw new Error("Offline");
-          return res.json();
-        })
-        .then(data => setAllProducts(data))
-        .catch(err => {
-          console.warn("Quiz using mock fallback products:", err);
-          const defaultMock = [
-            { id: 1, name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins. Maturing for 180 days in oak casks.', top_notes: 'Saffron, Rose', base_notes: 'Agarwood, Amberwood', image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=600&auto=format&fit=crop' },
-            { id: 2, name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine. A warm velvet hug.', top_notes: 'Bergamot, Saffron', base_notes: 'Jasmine, Patchouli', image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=600&auto=format&fit=crop' },
-            { id: 3, name: 'Santal de Ciel', brand: 'Astraire Private Blend', category: 'Woody', price: 21000, stock: 15, description: 'Aged Mysore Sandalwood extract with ambergris fixatives. High longevity.', top_notes: 'Sandalwood, Cardamom', base_notes: 'Cedarwood, Vetiver', image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=600&auto=format&fit=crop' },
-            { id: 4, name: 'Noir Extrême', brand: 'Astraire Private Blend', category: 'Oriental', price: 26000, stock: 5, description: 'Black Vanilla beans macerated in Limousin oak barrels. Smoky and dark.', top_notes: 'Black Pepper, Vanilla', base_notes: 'Smoked Wood, Incense', image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=600&auto=format&fit=crop' }
-          ];
-          setAllProducts(defaultMock);
-        });
+      const fetchProducts = async () => {
+        if (db) {
+          try {
+            const snap = await getDocs(collection(db, 'products'));
+            const list = [];
+            snap.forEach(docSnap => {
+              list.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            if (list.length > 0) {
+              setAllProducts(list);
+              return;
+            }
+          } catch (err) {
+            console.error("Firestore read error in ScentQuiz:", err);
+          }
+        }
+
+        // Mock Fallback
+        const defaultMock = [
+          { id: '1', name: 'Oud Élixir', brand: 'Astraire Private Blend', category: 'Woody', price: 24500, stock: 12, description: 'Compounded matured Cambodian Oud absolute resins. Maturing for 180 days in oak casks.', top_notes: 'Saffron, Rose', middle_notes: 'Patchouli, Jasmine', base_notes: 'Agarwood, Amberwood', image: 'https://images.unsplash.com/photo-1547887537-6158d64c35b3?q=80&w=600&auto=format&fit=crop' },
+          { id: '2', name: 'Aurée', brand: 'Astraire Private Blend', category: 'Floral', price: 18500, stock: 8, description: 'Bulgarian Rose Damascena blended with absolute Jasmine. A warm velvet hug.', top_notes: 'Bergamot, Saffron', middle_notes: 'Damask Rose, Night Jasmine', base_notes: 'Jasmine, Patchouli, Amber', image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=600&auto=format&fit=crop' },
+          { id: '3', name: 'Santal de Ciel', brand: 'Astraire Private Blend', category: 'Woody', price: 21000, stock: 15, description: 'Aged Mysore Sandalwood extract with ambergris fixatives. High longevity.', top_notes: 'Sandalwood, Cardamom', middle_notes: 'Amber, Vetiver', base_notes: 'Cedarwood, Vetiver', image: 'https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=600&auto=format&fit=crop' },
+          { id: '4', name: 'Noir Extrême', brand: 'Astraire Private Blend', category: 'Oriental', price: 26000, stock: 5, description: 'Black Vanilla beans macerated in Limousin oak barrels. Smoky and dark.', top_notes: 'Black Pepper, Vanilla', middle_notes: 'Oakwood, Tobacco', base_notes: 'Smoked Wood, Incense, Cedar', image: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=600&auto=format&fit=crop' }
+        ];
+        setAllProducts(defaultMock);
+      };
+
+      fetchProducts();
     }
   }, [isOpen]);
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { db } from '../config/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { User, ClipboardList, LogOut, Compass, MapPin, Sparkles, Check, PackageOpen } from 'lucide-react';
 import './Profile.css';
 
@@ -43,33 +45,46 @@ export default function Profile() {
       }
     }
 
-    // Load user orders from backend and local mockup storage
-    setLoadingOrders(true);
-    const localOrders = JSON.parse(localStorage.getItem('aura_mock_orders') || '[]')
-      .filter(order => order.user_email.toLowerCase() === user.email.toLowerCase());
+    // Load user orders from Firestore and local mockup storage
+    const fetchUserOrders = async () => {
+      setLoadingOrders(true);
+      const localOrders = JSON.parse(localStorage.getItem('aura_mock_orders') || '[]')
+        .filter(order => order.user_email.toLowerCase() === user.email.toLowerCase());
 
-    fetch(`http://localhost:5000/api/orders/user/${encodeURIComponent(user.email)}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch orders");
-        return res.json();
-      })
-      .then(dbOrders => {
-        // Merge database and local mockup orders, filtering duplicates by ID
-        const merged = [...dbOrders];
-        localOrders.forEach(localOrder => {
-          if (!merged.some(dbOrder => dbOrder.id === localOrder.id)) {
-            merged.push(localOrder);
-          }
-        });
-        merged.sort((a, b) => b.id - a.id);
-        setOrders(merged);
-        setLoadingOrders(false);
-      })
-      .catch(err => {
-        console.warn("Backend offline or orders query failed, using localStorage only.", err);
-        setOrders(localOrders);
-        setLoadingOrders(false);
-      });
+      if (db) {
+        try {
+          const q = query(
+            collection(db, 'orders'),
+            where('user_email', '==', user.email.toLowerCase().trim())
+          );
+          
+          const querySnapshot = await getDocs(q);
+          const dbOrders = [];
+          querySnapshot.forEach(docSnap => {
+            dbOrders.push({ id: docSnap.id, ...docSnap.data() });
+          });
+
+          // Merge database and local mockup orders, filtering duplicates by ID
+          const merged = [...dbOrders];
+          localOrders.forEach(localOrder => {
+            if (!merged.some(dbOrder => dbOrder.id === localOrder.id)) {
+              merged.push(localOrder);
+            }
+          });
+          merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          setOrders(merged);
+          setLoadingOrders(false);
+          return;
+        } catch (err) {
+          console.error("Firestore user orders read failed:", err);
+        }
+      }
+
+      setOrders(localOrders);
+      setLoadingOrders(false);
+    };
+
+    fetchUserOrders();
   }, [user, navigate]);
 
   const handleLogout = () => {

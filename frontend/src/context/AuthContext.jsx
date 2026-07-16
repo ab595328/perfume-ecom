@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth, db } from '../config/firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged 
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -12,8 +20,84 @@ export function AuthProvider({ children }) {
     return localStorage.getItem('aura_token') || null;
   });
 
+  // Track Firebase auth state changes
+  useEffect(() => {
+    if (!auth || !db) return;
+    
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const docRef = doc(db, 'users', firebaseUser.uid);
+          const docSnap = await getDoc(docRef);
+          let role = 'user';
+          
+          if (docSnap.exists()) {
+            role = docSnap.data().role || 'user';
+          } else {
+            role = firebaseUser.email.toLowerCase() === 'admin@astraire.com' ? 'admin' : 'user';
+            // Sync profile
+            await setDoc(docRef, { email: firebaseUser.email, role });
+          }
+          
+          const profile = { email: firebaseUser.email, role };
+          const idToken = await firebaseUser.getIdToken();
+          
+          setUser(profile);
+          setToken(idToken);
+          localStorage.setItem('aura_user', JSON.stringify(profile));
+          localStorage.setItem('aura_token', idToken);
+        } catch (err) {
+          console.error("Error synchronization on auth change:", err);
+        }
+      } else {
+        // Only clear if not using a static offline bypass token
+        const currentToken = localStorage.getItem('aura_token');
+        if (currentToken && !currentToken.startsWith('static_')) {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('aura_user');
+          localStorage.removeItem('aura_token');
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const login = async (email, password) => {
-    // 1. Static/Offline Credentials Bypasses
+    // 1. Firebase Live Login (Prioritized when active)
+    if (auth && db) {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        
+        // Fetch role
+        const docRef = doc(db, 'users', firebaseUser.uid);
+        const docSnap = await getDoc(docRef);
+        let role = 'user';
+        
+        if (docSnap.exists()) {
+          role = docSnap.data().role || 'user';
+        } else {
+          role = email.toLowerCase() === 'admin@astraire.com' ? 'admin' : 'user';
+          await setDoc(docRef, { email: firebaseUser.email, role });
+        }
+        
+        const profile = { email: firebaseUser.email, role };
+        const idToken = await firebaseUser.getIdToken();
+        
+        setUser(profile);
+        setToken(idToken);
+        localStorage.setItem('aura_user', JSON.stringify(profile));
+        localStorage.setItem('aura_token', idToken);
+        return { success: true };
+      } catch (error) {
+        console.error('Firebase login error:', error);
+        return { success: false, error: error.message };
+      }
+    }
+
+    // 2. Static/Offline Credentials Bypasses (Fallback only when Firebase is unconfigured)
     if (email.toLowerCase() === 'admin@astraire.com' && password === 'admin123') {
       const staticAdmin = { email: 'admin@astraire.com', role: 'admin' };
       setUser(staticAdmin);
@@ -32,61 +116,53 @@ export function AuthProvider({ children }) {
       return { success: true };
     }
 
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-
-      setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem('aura_user', JSON.stringify(data.user));
-      localStorage.setItem('aura_token', data.token);
-      return { success: true };
-    } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: error.message };
-    }
+    return { success: false, error: 'Firebase is not initialized' };
   };
 
   const register = async (email, password) => {
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+    // 1. Firebase Live Register
+    if (auth && db) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        
+        // Admin configuration by specific email
+        const role = email.toLowerCase() === 'admin@astraire.com' ? 'admin' : 'user';
+        const profile = { email: firebaseUser.email, role };
+        
+        // Store profile details
+        await setDoc(doc(db, 'users', firebaseUser.uid), profile);
+        
+        const idToken = await firebaseUser.getIdToken();
+        setUser(profile);
+        setToken(idToken);
+        localStorage.setItem('aura_user', JSON.stringify(profile));
+        localStorage.setItem('aura_token', idToken);
+        return { success: true };
+      } catch (error) {
+        console.error('Firebase registration error:', error);
+        return { success: false, error: error.message };
       }
-
-      setUser(data.user);
-      setToken(data.token);
-      localStorage.setItem('aura_user', JSON.stringify(data.user));
-      localStorage.setItem('aura_token', data.token);
-      return { success: true };
-    } catch (error) {
-      console.warn('Backend register connection failed, running offline static fallback.', error);
-      const mockUser = { email: email, role: 'user' };
-      setUser(mockUser);
-      setToken('static_register_token');
-      localStorage.setItem('aura_user', JSON.stringify(mockUser));
-      localStorage.setItem('aura_token', 'static_register_token');
-      return { success: true };
     }
+
+    // 2. Offline Fallback
+    console.warn('Firebase connection failed or not configured, running offline static fallback.');
+    const mockUser = { email: email, role: 'user' };
+    setUser(mockUser);
+    setToken('static_register_token');
+    localStorage.setItem('aura_user', JSON.stringify(mockUser));
+    localStorage.setItem('aura_token', 'static_register_token');
+    return { success: true };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    if (auth) {
+      try {
+        await signOut(auth);
+      } catch (err) {
+        console.error("Firebase signOut error:", err);
+      }
+    }
     setUser(null);
     setToken(null);
     localStorage.removeItem('aura_user');
@@ -105,7 +181,6 @@ export function AuthProvider({ children }) {
 
     const response = await fetch(url, { ...options, headers });
     if (response.status === 401 || response.status === 403) {
-      // Auto logout on unauthorized
       logout();
     }
     return response;

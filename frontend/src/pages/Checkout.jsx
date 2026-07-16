@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../config/firebase';
+import { collection, addDoc } from 'firebase/firestore';
 import { CreditCard, CheckCircle, Sparkles, MapPin, Mail, User, ShieldCheck } from 'lucide-react';
 import './Checkout.css';
 
@@ -22,9 +24,9 @@ export default function Checkout() {
     cardCvc: '123'
   });
 
-  // Prefill details if user is authenticated
+  // Prefill details if user is authenticated (and not admin)
   useEffect(() => {
-    if (user) {
+    if (user && user.role !== 'admin') {
       setFormData(prev => ({
         ...prev,
         name: user.email.split('@')[0].toUpperCase(),
@@ -85,43 +87,12 @@ export default function Checkout() {
 
     setIsSubmitting(true);
     const finalTotal = cartTotal - discountAmount;
+    const rzpKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
-    try {
-      const response = await fetch('http://localhost:5000/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_name: formData.name,
-          user_email: formData.email,
-          items: cartItems.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            qty: item.qty
-          })),
-          total_amount: finalTotal
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to place order');
-
-      // Luxury simulated payment delay
-      setTimeout(() => {
-        setCreatedOrderId(data.id);
-        setOrderSuccess(true);
-        setIsSubmitting(false);
-        clearCart();
-      }, 2000);
-
-    } catch (error) {
-      console.warn("Backend offline or order endpoint failed. Saving offline local mockup order.", error);
-      
-      const mockId = Math.floor(Math.random() * 9000) + 1000;
-      const newMockOrder = {
-        id: mockId,
+    const handleCreateOrderInFirestore = async (paymentId = null) => {
+      const orderPayload = {
         user_name: formData.name,
-        user_email: formData.email,
+        user_email: formData.email.toLowerCase().trim(),
         items: cartItems.map(item => ({
           id: item.id,
           name: item.name,
@@ -130,19 +101,74 @@ export default function Checkout() {
           brand: item.brand || 'Astraire Private Blend'
         })),
         total_amount: finalTotal,
-        status: 'pending',
+        address: formData.address,
+        city: formData.city,
+        zip: formData.zip,
+        status: paymentId ? 'completed' : 'pending',
+        payment_id: paymentId,
         created_at: new Date().toISOString()
       };
 
+      if (db) {
+        try {
+          const docRef = await addDoc(collection(db, 'orders'), orderPayload);
+          setCreatedOrderId(docRef.id);
+          setOrderSuccess(true);
+          clearCart();
+          setIsSubmitting(false);
+          return;
+        } catch (error) {
+          console.error("Firestore order creation failed:", error);
+        }
+      }
+
+      // Offline mock fallback
+      const mockId = Math.floor(Math.random() * 9000) + 1000;
+      const newMockOrder = {
+        id: mockId,
+        ...orderPayload
+      };
       const existingMockOrders = JSON.parse(localStorage.getItem('aura_mock_orders') || '[]');
       existingMockOrders.unshift(newMockOrder);
       localStorage.setItem('aura_mock_orders', JSON.stringify(existingMockOrders));
 
+      setCreatedOrderId(mockId);
+      setOrderSuccess(true);
+      clearCart();
+      setIsSubmitting(false);
+    };
+
+    if (rzpKey && window.Razorpay) {
+      // Initialize Razorpay Standard Checkout directly on the client side
+      const options = {
+        key: rzpKey,
+        amount: Math.round(finalTotal * 100), // in paise
+        currency: 'INR',
+        name: 'Astraire',
+        description: 'Luxury Haute Perfumery Acquisition',
+        handler: async function (response) {
+          await handleCreateOrderInFirestore(response.razorpay_payment_id);
+        },
+        prefill: {
+          name: formData.name,
+          email: formData.email
+        },
+        theme: {
+          color: '#c3a355' // premium gold
+        },
+        modal: {
+          ondismiss: function () {
+            setIsSubmitting(false);
+          }
+        }
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } else {
+      console.warn("Razorpay key or window.Razorpay script missing. Processing order directly.");
+      // Directly place the order with a luxury delay animation
       setTimeout(() => {
-        setCreatedOrderId(mockId);
-        setOrderSuccess(true);
-        setIsSubmitting(false);
-        clearCart();
+        handleCreateOrderInFirestore();
       }, 2000);
     }
   };
